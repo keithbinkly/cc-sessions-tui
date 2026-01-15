@@ -26,9 +26,9 @@ classifiers = [
 cc-sessions = "cc_sessions_tui:main"
 
 [project.urls]
-Homepage = "https://github.com/kbinkly/cc-sessions-tui"
-Repository = "https://github.com/kbinkly/cc-sessions-tui"
-Issues = "https://github.com/kbinkly/cc-sessions-tui/issues"
+Homepage = "https://github.com/keithbinkly/cc-sessions-tui"
+Repository = "https://github.com/keithbinkly/cc-sessions-tui"
+Issues = "https://github.com/keithbinkly/cc-sessions-tui/issues"
 
 [build-system]
 requires = ["setuptools>=61.0"]

@@ -32,7 +32,7 @@ pip install cc-sessions-tui
 ### Direct download
 
 ```bash
-curl -O https://raw.githubusercontent.com/kbinkly/cc-sessions-tui/main/cc_sessions_tui.py
+curl -O https://raw.githubusercontent.com/keithbinkly/cc-sessions-tui/main/cc_sessions_tui.py
 chmod +x cc_sessions_tui.py
 ./cc_sessions_tui.py
 ```
