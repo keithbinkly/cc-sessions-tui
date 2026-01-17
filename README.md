@@ -2,7 +2,7 @@
 
 A terminal UI for browsing and resuming [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions.
 
-![ccsessions-playbackfast](https://github.com/user-attachments/assets/e5470b3e-c3a5-43c5-a097-304aeb8a7924)
+![cc-session-demo-trimmed](https://github.com/user-attachments/assets/db8dc037-e1f4-4364-a79f-ab473fe0e9ff)
 
 <img width="775" height="556" alt="cc-sessions-info" src="https://github.com/user-attachments/assets/3ffd8c25-5ba9-43c3-a190-f4ae3102b929" />
 
