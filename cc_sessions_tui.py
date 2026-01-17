@@ -436,7 +436,7 @@ def render(sessions, selected_idx, message='', sort_by='msgs', page=0, per_page=
     TITLE_WIDTH = 42
     # Right columns: msgs(4) + 2 + ago(5) + 2 + id(6) = 19 chars
     print(f"  {Colors.STALE}{'─'*(WIDTH-2)}{Colors.RESET}")
-    print(f"   {Colors.MUTED} {'repo':<{REPO_WIDTH}}  {'session':<{TITLE_WIDTH}}  {'msgs':>4}  {'ago':>5}  {'id':<6}{Colors.RESET}")
+    print(f"   {Colors.MUTED}  {'repo':<{REPO_WIDTH}}  {'session':<{TITLE_WIDTH}}   {'msgs':>4} {'ago':>5}  {'id':<6}{Colors.RESET}")
     print(f"  {Colors.STALE}{'─'*(WIDTH-2)}{Colors.RESET}")
 
     # Sessions (paginated)
