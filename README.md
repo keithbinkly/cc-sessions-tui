@@ -49,12 +49,21 @@ Or run directly:
 python cc_sessions_tui.py
 ```
 
+### Demo Mode
+
+Try it out with sample data (no Claude sessions required):
+
+```bash
+cc-sessions --demo       # Fullstack development demo
+cc-sessions --demo-dbt   # dbt analytics engineering demo
+```
+
 ## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
 | `↑`/`↓` or `j`/`k` | Navigate sessions |
-| `←`/`→` | Page navigation |
+| `←`/`→` | Page navigation (15 sessions per page) |
 | `Enter` | Resume selected session |
 | `/` | Search |
 | `Esc` | Clear search |

@@ -429,7 +429,7 @@ def render(sessions, selected_idx, message='', sort_by='msgs', page=0, per_page=
     k = lambda key: f"{Colors.ACCENT}{key}{Colors.RESET}"
     sort_indicators = {'time': 't', 'msgs': 'm', 'label': 'g'}
     si = sort_indicators.get(sort_by, 't')
-    print(f"  {Colors.MUTED}nav{Colors.RESET} {k('↑↓')}  {Colors.MUTED}search{Colors.RESET} {k('/')}  {Colors.MUTED}go{Colors.RESET} {k('⏎')}  {Colors.MUTED}rename{Colors.RESET} {k('r')}  {Colors.MUTED}label{Colors.RESET} {k('l')}  {Colors.MUTED}sort{Colors.RESET} {k('t')}{k('m')}{k('g')}{Colors.STALE}:{si}{Colors.RESET}  {Colors.MUTED}all{Colors.RESET} {k('a')}  {Colors.MUTED}quit{Colors.RESET} {k('q')}")
+    print(f"  {Colors.MUTED}nav{Colors.RESET} {k('↑↓←→')}  {Colors.MUTED}search{Colors.RESET} {k('/')}  {Colors.MUTED}go{Colors.RESET} {k('⏎')}  {Colors.MUTED}rename{Colors.RESET} {k('r')}  {Colors.MUTED}label{Colors.RESET} {k('l')}  {Colors.MUTED}sort{Colors.RESET} {k('t')}{k('m')}{k('g')}{Colors.STALE}:{si}{Colors.RESET}  {Colors.MUTED}all{Colors.RESET} {k('a')}  {Colors.MUTED}quit{Colors.RESET} {k('q')}")
 
     # Column headers - aligned to data columns
     REPO_WIDTH = 14
@@ -718,12 +718,79 @@ def get_search_input():
 
     return query
 
-def generate_demo_sessions():
-    """Generate fake session data for demo/screenshots."""
+def generate_demo_sessions(demo_type='dev'):
+    """Generate fake session data for demo/screenshots.
+
+    demo_type: 'dev' for fullstack development, 'dbt' for analytics engineering
+    """
     import random
 
-    # dbt analytics engineering demo data - varied repos by functional area
-    sessions_data = [
+    if demo_type == 'dbt':
+        sessions_data = generate_dbt_demo_data()
+    else:
+        sessions_data = generate_dev_demo_data()
+
+    now = datetime.now()
+    sessions = []
+
+    for s in sessions_data:
+        session_id = f"{random.randint(10000000, 99999999):08x}"
+        mtime = now - timedelta(minutes=s['mins_ago'])
+
+        sessions.append({
+            'session_id': session_id,
+            'repo': s['repo'],
+            'custom_title': s['name'],
+            'message_count': s['msgs'],
+            'mtime': mtime,
+            'git_branch': s['branch'],
+            'tags': s['tags'],
+            'summary': {'intent': s['intent'], 'files': s['files']},
+            'project_path': f"/Users/demo/projects/{s['repo']}",
+        })
+
+    return sessions
+
+def generate_dev_demo_data():
+    """Fullstack/frontend development demo data."""
+    return [
+        # Feature work (label: feature)
+        {'name': 'Add_user_authentication_OAuth2', 'repo': 'web-app', 'mins_ago': 12, 'msgs': 187, 'branch': 'feature/oauth', 'tags': ['feature'], 'intent': 'Implementing OAuth2 login flow with Google and GitHub providers', 'files': 'auth.ts, LoginPage.tsx, oauth-callback.ts'},
+        {'name': 'Build_dashboard_analytics_page', 'repo': 'web-app', 'mins_ago': 85, 'msgs': 234, 'branch': 'feature/dashboard', 'tags': ['feature'], 'intent': 'Creating analytics dashboard with charts, filters, and date range picker', 'files': 'Dashboard.tsx, BarChart.tsx, DateRangePicker.tsx'},
+        {'name': 'Implement_real_time_notifications', 'repo': 'web-app', 'mins_ago': 320, 'msgs': 156, 'branch': 'feature/notifications', 'tags': ['feature'], 'intent': 'WebSocket-based notification system with toast components', 'files': 'useNotifications.ts, NotificationToast.tsx, ws-client.ts'},
+        {'name': 'Add_dark_mode_support', 'repo': 'web-app', 'mins_ago': 890, 'msgs': 89, 'branch': 'feature/dark-mode', 'tags': ['feature'], 'intent': 'Theme provider with CSS variables and system preference detection', 'files': 'ThemeProvider.tsx, theme.css, useTheme.ts'},
+
+        # API work (label: api)
+        {'name': 'Build_REST_API_endpoints', 'repo': 'api-server', 'mins_ago': 45, 'msgs': 145, 'branch': 'feature/user-api', 'tags': ['api'], 'intent': 'CRUD endpoints for user management with validation', 'files': 'routes/users.ts, middleware/validate.ts, schemas/user.ts'},
+        {'name': 'Add_rate_limiting_middleware', 'repo': 'api-server', 'mins_ago': 280, 'msgs': 67, 'branch': 'feature/rate-limit', 'tags': ['api'], 'intent': 'Redis-backed rate limiting with configurable windows', 'files': 'middleware/rateLimit.ts, redis-client.ts'},
+        {'name': 'Implement_file_upload_service', 'repo': 'api-server', 'mins_ago': 720, 'msgs': 198, 'branch': 'feature/uploads', 'tags': ['api'], 'intent': 'S3 multipart uploads with progress tracking and validation', 'files': 'services/upload.ts, routes/files.ts, s3-client.ts'},
+
+        # Bug fixes (label: bugfix)
+        {'name': 'Fix_memory_leak_in_useEffect', 'repo': 'web-app', 'mins_ago': 25, 'msgs': 34, 'branch': 'fix/memory-leak', 'tags': ['bugfix'], 'intent': 'Cleanup subscription on unmount causing memory leak', 'files': 'useDataFetch.ts'},
+        {'name': 'Fix_race_condition_in_checkout', 'repo': 'api-server', 'mins_ago': 180, 'msgs': 89, 'branch': 'fix/checkout-race', 'tags': ['bugfix'], 'intent': 'Database transaction to prevent double-charge on rapid clicks', 'files': 'services/checkout.ts, middleware/idempotency.ts'},
+        {'name': 'Fix_CSS_grid_layout_mobile', 'repo': 'web-app', 'mins_ago': 450, 'msgs': 23, 'branch': 'fix/mobile-grid', 'tags': ['bugfix'], 'intent': 'Responsive breakpoints for product grid on small screens', 'files': 'ProductGrid.tsx, grid.module.css'},
+
+        # Testing (label: testing)
+        {'name': 'Add_integration_tests_auth', 'repo': 'api-server', 'mins_ago': 150, 'msgs': 112, 'branch': 'test/auth-integration', 'tags': ['testing'], 'intent': 'Jest integration tests for auth endpoints with test database', 'files': 'tests/auth.test.ts, tests/setup.ts, jest.config.js'},
+        {'name': 'Setup_E2E_tests_Playwright', 'repo': 'web-app', 'mins_ago': 560, 'msgs': 167, 'branch': 'test/e2e-setup', 'tags': ['testing'], 'intent': 'Playwright E2E test suite for critical user flows', 'files': 'e2e/checkout.spec.ts, e2e/login.spec.ts, playwright.config.ts'},
+
+        # DevOps (label: devops)
+        {'name': 'Setup_GitHub_Actions_CI', 'repo': 'web-app', 'mins_ago': 380, 'msgs': 78, 'branch': 'ci/github-actions', 'tags': ['devops'], 'intent': 'CI pipeline with lint, test, build, and preview deploy', 'files': '.github/workflows/ci.yml, .github/workflows/preview.yml'},
+        {'name': 'Configure_Docker_compose_dev', 'repo': 'api-server', 'mins_ago': 1100, 'msgs': 56, 'branch': 'devops/docker', 'tags': ['devops'], 'intent': 'Docker Compose setup for local development with hot reload', 'files': 'Dockerfile, docker-compose.yml, .dockerignore'},
+
+        # Refactoring (label: refactor)
+        {'name': 'Migrate_to_TypeScript_strict', 'repo': 'web-app', 'mins_ago': 680, 'msgs': 245, 'branch': 'refactor/typescript', 'tags': ['refactor'], 'intent': 'Enable strict mode and fix all type errors', 'files': 'tsconfig.json, types/index.d.ts, utils/helpers.ts'},
+        {'name': 'Extract_shared_components', 'repo': 'web-app', 'mins_ago': 1400, 'msgs': 134, 'branch': 'refactor/shared-ui', 'tags': ['refactor'], 'intent': 'Move reusable UI components to shared package', 'files': 'packages/ui/Button.tsx, packages/ui/Modal.tsx, packages/ui/index.ts'},
+
+        # Untagged
+        {'name': 'Prototype_AI_chat_feature', 'repo': 'web-app', 'mins_ago': 95, 'msgs': 312, 'branch': 'prototype/ai-chat', 'tags': [], 'intent': 'Experimenting with streaming chat UI for AI assistant', 'files': 'ChatWindow.tsx, useChat.ts, api/chat.ts'},
+        {'name': 'Explore_new_state_management', 'repo': 'web-app', 'mins_ago': 1800, 'msgs': 67, 'branch': 'explore/zustand', 'tags': [], 'intent': 'Evaluating Zustand vs Redux for global state', 'files': 'stores/useStore.ts, stores/cartSlice.ts'},
+        {'name': 'Debug_production_error', 'repo': 'api-server', 'mins_ago': 2100, 'msgs': 89, 'branch': 'debug/500-errors', 'tags': [], 'intent': 'Investigating intermittent 500 errors in production logs', 'files': 'middleware/errorHandler.ts, utils/logger.ts'},
+    ]
+
+def generate_dbt_demo_data():
+    """dbt analytics engineering demo data."""
+    return [
         # QA work (label: qa)
         {'name': 'QA_customer_cohort_metrics_phase2', 'repo': 'dbt-product', 'mins_ago': 8, 'msgs': 156, 'branch': 'feature/cohort-metrics', 'tags': ['qa'], 'intent': 'Validating 90-day active segmentation columns in int_orders models', 'files': 'int_orders__daily_agg.sql, mrt_customer_cohort__semantic.sql'},
         {'name': 'QA_subscription_revenue_pipeline', 'repo': 'dbt-finance', 'mins_ago': 95, 'msgs': 89, 'branch': 'feature/subscription-rev', 'tags': ['qa'], 'intent': 'Running dbt build and MetricFlow queries to verify revenue metrics', 'files': 'int_subscriptions__monthly.sql, sem_subscription_metrics.yml'},
@@ -760,37 +827,17 @@ def generate_demo_sessions():
         {'name': 'Prototype_realtime_dashboard', 'repo': 'dbt-core', 'mins_ago': 2200, 'msgs': 78, 'branch': 'prototype/realtime', 'tags': [], 'intent': 'Testing streaming ingestion approach for near-realtime metrics', 'files': 'models/staging/stg_events__stream.sql'},
     ]
 
-    now = datetime.now()
-    sessions = []
-
-    for i, s in enumerate(sessions_data):
-        session_id = f"{random.randint(10000000, 99999999):08x}"
-        mtime = now - timedelta(minutes=s['mins_ago'])
-
-        sessions.append({
-            'session_id': session_id,
-            'repo': s['repo'],
-            'custom_title': s['name'],
-            'message_count': s['msgs'],
-            'mtime': mtime,
-            'git_branch': s['branch'],
-            'tags': s['tags'],
-            'summary': {'intent': s['intent'], 'files': s['files']},
-            'project_path': f"/Users/demo/projects/{s['repo']}",
-        })
-
-    return sessions
-
 def main():
-    # Check for --demo flag
-    demo_mode = '--demo' in sys.argv
+    # Check for demo flags
+    demo_mode = '--demo' in sys.argv or '--demo-dbt' in sys.argv
+    demo_type = 'dbt' if '--demo-dbt' in sys.argv else 'dev'
 
     # Disable line wrapping for cleaner display
     sys.stdout.write('\033[?7l')
     sys.stdout.flush()
 
     if demo_mode:
-        all_sessions = generate_demo_sessions()
+        all_sessions = generate_demo_sessions(demo_type)
     else:
         all_sessions = collect_sessions(hours=48)  # Start with 48hr, can load more
     sessions = all_sessions  # Current view (may be filtered)
