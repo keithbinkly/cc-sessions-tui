@@ -2,7 +2,9 @@
 
 A terminal UI for browsing and resuming [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions.
 
-![cc-sessions-tui screenshot](screenshot.png)
+![ccsessions-playbackfast](https://github.com/user-attachments/assets/e5470b3e-c3a5-43c5-a097-304aeb8a7924)
+
+<img width="775" height="556" alt="cc-sessions-info" src="https://github.com/user-attachments/assets/3ffd8c25-5ba9-43c3-a190-f4ae3102b929" />
 
 ## Features
 
@@ -20,7 +22,8 @@ A terminal UI for browsing and resuming [Claude Code](https://docs.anthropic.com
 ### pipx (recommended)
 
 ```bash
-pipx install cc-sessions-tui
+pipx install cc-![Uploading ccsessions-playbackfast.gif…]()
+sessions-tui
 ```
 
 ### pip
