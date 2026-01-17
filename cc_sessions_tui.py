@@ -108,6 +108,8 @@ class Colors:
     SELECT_BG = '\033[48;5;253m'      # Light gray background
     SELECT_BORDER = '\033[38;5;33m'   # Blue left border
     SELECT_TEXT = '\033[38;5;236m'    # Dark charcoal text
+    SELECT_REPO = '\033[38;5;55m'     # Dark purple for repo on selection
+    SELECT_TITLE = '\033[38;5;236m'   # Dark charcoal for title on selection
 
     # Summary area
     INTENT_COLOR = '\033[38;5;223m'   # Warm cream for intent
@@ -423,18 +425,18 @@ def render(sessions, selected_idx, message='', sort_by='msgs', page=0, per_page=
     print(f"  {Colors.MUTED}│{Colors.RESET} {Colors.BOLD}{hdr_title}{Colors.RESET}{' ' * padding} {Colors.MUTED}│{Colors.RESET}")
     print(f"  {Colors.MUTED}└{'─' * inner_width}┘{Colors.RESET}")
 
-    # Controls - keys pop with background, labels are lighter
-    k = lambda key: f"{Colors.KEY_BG}{Colors.KEY_FG} {key} {Colors.RESET}"  # Key badge
-    lb = Colors.LABEL  # Label color
-    sort_indicators = {'time': 'time ↓', 'msgs': 'msgs ↓', 'label': 'label ↓'}
-    sort_indicator = sort_indicators.get(sort_by, 'time ↓')
-    print(f"  {k('↑↓')}{lb}nav{Colors.RESET} {k('←→')}{lb}page{Colors.RESET} {k('/')}{lb}search{Colors.RESET} {k('r')}{lb}rename{Colors.RESET} {k('l')}{lb}label{Colors.RESET} {k('⏎')}{lb}go{Colors.RESET} {k('t/m/g')}{lb}sort{Colors.RESET} {k('a')}{lb}all{Colors.RESET} {k('R')}{lb}refresh{Colors.RESET} {k('q')}{lb}quit{Colors.RESET}  {Colors.ACCENT}⟨{sort_indicator}⟩{Colors.RESET}")
+    # Controls - clean layout with subtle separators
+    k = lambda key: f"{Colors.ACCENT}{key}{Colors.RESET}"
+    sort_indicators = {'time': 't', 'msgs': 'm', 'label': 'g'}
+    si = sort_indicators.get(sort_by, 't')
+    print(f"  {Colors.MUTED}nav{Colors.RESET} {k('↑↓')}  {Colors.MUTED}search{Colors.RESET} {k('/')}  {Colors.MUTED}go{Colors.RESET} {k('⏎')}  {Colors.MUTED}rename{Colors.RESET} {k('r')}  {Colors.MUTED}label{Colors.RESET} {k('l')}  {Colors.MUTED}sort{Colors.RESET} {k('t')}{k('m')}{k('g')}{Colors.STALE}:{si}{Colors.RESET}  {Colors.MUTED}all{Colors.RESET} {k('a')}  {Colors.MUTED}quit{Colors.RESET} {k('q')}")
 
-    # Column headers
-    REPO_WIDTH = 18
-    TITLE_WIDTH = 40
+    # Column headers - aligned to data columns
+    REPO_WIDTH = 14
+    TITLE_WIDTH = 42
+    # Right columns: msgs(4) + 2 + ago(5) + 2 + id(6) = 19 chars
     print(f"  {Colors.STALE}{'─'*(WIDTH-2)}{Colors.RESET}")
-    print(f"   {Colors.MUTED}  {'repo':<{REPO_WIDTH}} {'session name':<{TITLE_WIDTH}}      msgs     time       id{Colors.RESET}")
+    print(f"   {Colors.MUTED} {'repo':<{REPO_WIDTH}}  {'session':<{TITLE_WIDTH}}  {'msgs':>4}  {'ago':>5}  {'id':<6}{Colors.RESET}")
     print(f"  {Colors.STALE}{'─'*(WIDTH-2)}{Colors.RESET}")
 
     # Sessions (paginated)
@@ -480,32 +482,26 @@ def render(sessions, selected_idx, message='', sort_by='msgs', page=0, per_page=
         days = int(diff.total_seconds() / 86400)
 
         if minutes < 60:
-            time_str = f"{minutes}m ago"
+            time_str = f"{minutes}m"
         elif hours < 24:
-            time_str = f"{hours}h ago"
+            time_str = f"{hours}h"
         elif days < 7:
-            time_str = f"{days}d ago"
+            time_str = f"{days}d"
         else:
             time_str = s['mtime'].strftime('%m/%d')
-        time_str = f"{time_str:>8}"
+        time_str = f"{time_str:>5}"
 
-        sid = s['session_id'][:8]
+        sid = s['session_id'][:6]
 
-        # Fixed-width right columns - refined separators
-        right_cols = f"{Colors.MUTED}{msgs}{Colors.RESET} {Colors.STALE}│{Colors.RESET} {Colors.MUTED}{time_str}{Colors.RESET} {Colors.STALE}│{Colors.RESET} {Colors.STALE}{sid}{Colors.RESET}"
-        right_cols_plain = f"{msgs} │ {time_str} │ {sid}"
-
-        # Left part: dot + repo + name (no row numbers)
-        left_visible = 1 + 1 + 1 + REPO_WIDTH + 1  # space + dot + space + repo + space
-        name_visible = TITLE_WIDTH
-        right_visible = len(right_cols_plain)
-        padding = WIDTH - left_visible - name_visible - right_visible - 2
+        # Fixed-width right columns - must match header exactly
+        # msgs(4) + 2sp + ago(5) + 2sp + id(6) = 19 total
+        right_cols = f"{Colors.MUTED}{msgs}  {time_str}{Colors.RESET}  {Colors.STALE}{sid:<6}{Colors.RESET}"
 
         tags = s.get('tags', [])
 
         if global_idx == selected_idx:
-            # Selected row - accent border style
-            print(f"  {Colors.SELECT_BORDER}▌{Colors.RESET}{Colors.SELECT_BG}{color}{dot} {Colors.REPO}{repo}{Colors.RESET}{Colors.SELECT_BG} {Colors.TITLE}{display_name}{Colors.RESET}{Colors.SELECT_BG}{' '*max(0,padding)}{Colors.SELECT_TEXT}{msgs} {Colors.STALE}│{Colors.SELECT_TEXT} {time_str} {Colors.STALE}│{Colors.ACCENT} {sid}{Colors.RESET}")
+            # Selected row - accent border style (fixed widths to match header)
+            print(f"  {Colors.SELECT_BORDER}▌{Colors.RESET}{Colors.SELECT_BG}{color}{dot} {Colors.SELECT_REPO}{repo}  {Colors.SELECT_TITLE}{display_name}  {Colors.SELECT_TEXT}{msgs}  {time_str}  {Colors.ACCENT}{sid:<6}{Colors.RESET}")
             # Show Format D summary: intent + files with refined colors
             summary = s.get('summary', {})
             intent = summary.get('intent', '')[:WIDTH-12] if isinstance(summary, dict) else str(summary)[:WIDTH-12]
@@ -522,7 +518,7 @@ def render(sessions, selected_idx, message='', sort_by='msgs', page=0, per_page=
                 print(f"  {Colors.SELECT_BORDER}│{Colors.RESET}     {branch_part}{separator}{tags_part}")
             print(f"  {Colors.SELECT_BORDER}╵{Colors.RESET}")
         else:
-            print(f"   {color}{dot}{Colors.RESET} {Colors.REPO}{repo}{Colors.RESET} {Colors.MUTED}{display_name}{Colors.RESET}{' '*max(0,padding)}{right_cols}")
+            print(f"   {color}{dot}{Colors.RESET} {Colors.REPO}{repo}{Colors.RESET}  {Colors.MUTED}{display_name}{Colors.RESET}  {right_cols}")
 
     # Message area
     if message:
@@ -722,20 +718,96 @@ def get_search_input():
 
     return query
 
+def generate_demo_sessions():
+    """Generate fake session data for demo/screenshots."""
+    import random
+
+    # dbt analytics engineering demo data - varied repos by functional area
+    sessions_data = [
+        # QA work (label: qa)
+        {'name': 'QA_customer_cohort_metrics_phase2', 'repo': 'dbt-product', 'mins_ago': 8, 'msgs': 156, 'branch': 'feature/cohort-metrics', 'tags': ['qa'], 'intent': 'Validating 90-day active segmentation columns in int_orders models', 'files': 'int_orders__daily_agg.sql, mrt_customer_cohort__semantic.sql'},
+        {'name': 'QA_subscription_revenue_pipeline', 'repo': 'dbt-finance', 'mins_ago': 95, 'msgs': 89, 'branch': 'feature/subscription-rev', 'tags': ['qa'], 'intent': 'Running dbt build and MetricFlow queries to verify revenue metrics', 'files': 'int_subscriptions__monthly.sql, sem_subscription_metrics.yml'},
+        {'name': 'QA_inventory_forecast_model', 'repo': 'dbt-supply', 'mins_ago': 380, 'msgs': 201, 'branch': 'feature/inventory-fc', 'tags': ['qa'], 'intent': 'Testing forecast accuracy metrics against warehouse state', 'files': 'mrt_inventory_forecast.sql, test_forecast_accuracy.sql'},
+        {'name': 'QA_payment_attribution_fix', 'repo': 'dbt-finance', 'mins_ago': 1100, 'msgs': 67, 'branch': 'fix/payment-attr', 'tags': ['qa'], 'intent': 'Verifying payment-to-order attribution logic after refactor', 'files': 'int_payments__attributed.sql, int_order_payments.sql'},
+
+        # Pipeline development (label: pipeline)
+        {'name': 'Add_retention_cohort_analysis', 'repo': 'dbt-product', 'mins_ago': 25, 'msgs': 234, 'branch': 'feature/retention', 'tags': ['pipeline'], 'intent': 'Building weekly retention cohort model with configurable lookback windows', 'files': 'int_users__cohort_base.sql, mrt_retention_cohort.sql, macros/cohort_spine.sql'},
+        {'name': 'Refactor_product_hierarchy_dims', 'repo': 'dbt-product', 'mins_ago': 180, 'msgs': 145, 'branch': 'refactor/product-dims', 'tags': ['pipeline'], 'intent': 'Normalizing product category hierarchy into separate dimension tables', 'files': 'dim_product.sql, dim_category.sql, dim_subcategory.sql'},
+        {'name': 'Implement_incremental_orders', 'repo': 'dbt-core', 'mins_ago': 520, 'msgs': 312, 'branch': 'feature/incremental', 'tags': ['pipeline'], 'intent': 'Converting orders fact to incremental materialization with merge strategy', 'files': 'fct_orders.sql, macros/incremental_filter.sql'},
+        {'name': 'Build_supplier_performance_mart', 'repo': 'dbt-supply', 'mins_ago': 1400, 'msgs': 178, 'branch': 'feature/supplier-perf', 'tags': ['pipeline'], 'intent': 'Creating supplier scorecard mart with delivery and quality metrics', 'files': 'mrt_supplier_scorecard.sql, int_deliveries__supplier_agg.sql'},
+
+        # Semantic layer (label: semantic)
+        {'name': 'Define_revenue_metrics_v2', 'repo': 'dbt-finance', 'mins_ago': 55, 'msgs': 78, 'branch': 'feature/rev-metrics-v2', 'tags': ['semantic'], 'intent': 'Adding gross_revenue, net_revenue, and refund_rate to semantic layer', 'files': 'sem_revenue_metrics.yml, mrt_revenue__semantic_base.sql'},
+        {'name': 'Add_customer_ltv_metric', 'repo': 'dbt-product', 'mins_ago': 290, 'msgs': 45, 'branch': 'feature/ltv-metric', 'tags': ['semantic'], 'intent': 'Implementing customer lifetime value with 12-month rolling window', 'files': 'sem_customer_metrics.yml, int_customers__ltv_calc.sql'},
+        {'name': 'Configure_metricflow_dimensions', 'repo': 'dbt-core', 'mins_ago': 850, 'msgs': 56, 'branch': 'feature/mf-dims', 'tags': ['semantic'], 'intent': 'Setting up time spine and entity links for MetricFlow queries', 'files': 'metricflow_time_spine.sql, sem_entities.yml'},
+
+        # Bugfixes (label: bugfix)
+        {'name': 'Fix_duplicate_orders_edge_case', 'repo': 'dbt-core', 'mins_ago': 42, 'msgs': 67, 'branch': 'fix/dupe-orders', 'tags': ['bugfix'], 'intent': 'Resolving duplicate order rows from timezone boundary edge case', 'files': 'int_orders__deduped.sql, tests/test_order_uniqueness.sql'},
+        {'name': 'Fix_null_handling_in_margins', 'repo': 'dbt-finance', 'mins_ago': 240, 'msgs': 34, 'branch': 'fix/null-margins', 'tags': ['bugfix'], 'intent': 'Adding coalesce for null costs causing division errors in margin calc', 'files': 'int_order_items__margins.sql'},
+        {'name': 'Fix_CI_slim_manifest_overwrite', 'repo': 'dbt-core', 'mins_ago': 720, 'msgs': 89, 'branch': 'fix/ci-manifest', 'tags': ['bugfix'], 'intent': 'Using --target-path target_run to prevent production manifest overwrite', 'files': 'dbt_project.yml, .github/workflows/ci.yml'},
+
+        # Documentation (label: docs)
+        {'name': 'Document_canonical_models', 'repo': 'dbt-core', 'mins_ago': 150, 'msgs': 23, 'branch': 'docs/canonical', 'tags': ['docs'], 'intent': 'Writing model descriptions and column docs for canonical layer', 'files': 'models/canonical/_canonical__docs.yml'},
+        {'name': 'Update_contribution_guidelines', 'repo': 'dbt-core', 'mins_ago': 980, 'msgs': 18, 'branch': 'docs/contrib', 'tags': ['docs'], 'intent': 'Adding PR template and branch naming conventions', 'files': 'CONTRIBUTING.md, .github/PULL_REQUEST_TEMPLATE.md'},
+
+        # Marketing (label: marketing)
+        {'name': 'Campaign_attribution_model', 'repo': 'dbt-marketing', 'mins_ago': 65, 'msgs': 134, 'branch': 'feature/attribution', 'tags': ['pipeline'], 'intent': 'Multi-touch attribution model for marketing campaigns', 'files': 'int_touchpoints.sql, mrt_campaign_attribution.sql'},
+        {'name': 'Email_engagement_metrics', 'repo': 'dbt-marketing', 'mins_ago': 440, 'msgs': 67, 'branch': 'feature/email-metrics', 'tags': ['semantic'], 'intent': 'Adding open rate, click rate, unsubscribe metrics to semantic layer', 'files': 'sem_email_metrics.yml, int_email_events.sql'},
+
+        # Untagged sessions
+        {'name': 'Explore_new_source_tables', 'repo': 'dbt-core', 'mins_ago': 350, 'msgs': 45, 'branch': 'explore/new-sources', 'tags': [], 'intent': 'Profiling new vendor data tables for potential integration', 'files': 'sources/vendor_data.yml'},
+        {'name': 'Ad_hoc_churn_analysis', 'repo': 'dbt-product', 'mins_ago': 1600, 'msgs': 112, 'branch': 'analysis/churn', 'tags': [], 'intent': 'One-off analysis of customer churn patterns by acquisition channel', 'files': 'analyses/churn_by_channel.sql'},
+        {'name': 'Prototype_realtime_dashboard', 'repo': 'dbt-core', 'mins_ago': 2200, 'msgs': 78, 'branch': 'prototype/realtime', 'tags': [], 'intent': 'Testing streaming ingestion approach for near-realtime metrics', 'files': 'models/staging/stg_events__stream.sql'},
+    ]
+
+    now = datetime.now()
+    sessions = []
+
+    for i, s in enumerate(sessions_data):
+        session_id = f"{random.randint(10000000, 99999999):08x}"
+        mtime = now - timedelta(minutes=s['mins_ago'])
+
+        sessions.append({
+            'session_id': session_id,
+            'repo': s['repo'],
+            'custom_title': s['name'],
+            'message_count': s['msgs'],
+            'mtime': mtime,
+            'git_branch': s['branch'],
+            'tags': s['tags'],
+            'summary': {'intent': s['intent'], 'files': s['files']},
+            'project_path': f"/Users/demo/projects/{s['repo']}",
+        })
+
+    return sessions
+
 def main():
-    all_sessions = collect_sessions(hours=48)  # Start with 48hr, can load more
+    # Check for --demo flag
+    demo_mode = '--demo' in sys.argv
+
+    # Disable line wrapping for cleaner display
+    sys.stdout.write('\033[?7l')
+    sys.stdout.flush()
+
+    if demo_mode:
+        all_sessions = generate_demo_sessions()
+    else:
+        all_sessions = collect_sessions(hours=48)  # Start with 48hr, can load more
     sessions = all_sessions  # Current view (may be filtered)
 
     if not sessions:
+        sys.stdout.write('\033[?7h')  # Re-enable before exit
         print("No sessions found in the last 48 hours.")
         return
 
-    # Load tags from external file (easy to delete ~/.claude/session-tags.json to reset)
-    tags_data = load_tags()
-
-    # Apply tags to sessions
-    for s in sessions:
-        s['tags'] = get_session_tags(s['session_id'], tags_data)
+    # Load tags from external file (skip in demo mode - tags already included)
+    if demo_mode:
+        tags_data = {}
+    else:
+        tags_data = load_tags()
+        # Apply tags to sessions
+        for s in sessions:
+            s['tags'] = get_session_tags(s['session_id'], tags_data)
 
     # Default sort by time (most recent first)
     sessions.sort(key=lambda x: x['mtime'], reverse=True)
@@ -765,6 +837,7 @@ def main():
             key = get_key()
 
             if key in ('q', '\x03'):  # q, Ctrl+C
+                print('\033[?7h', end='')  # Re-enable line wrapping
                 clear_screen()
                 print("Goodbye!")
                 break
@@ -904,6 +977,7 @@ def main():
                 repo_path = get_repo_path(s['repo'])
                 session_id = s['session_id']
 
+                print('\033[?7h', end='')  # Re-enable line wrapping
                 clear_screen()
                 if HAS_SPECSTORY:
                     print(f"\n  Resuming session {session_id[:8]} in {s['repo']} (via specstory)...\n")
@@ -917,6 +991,7 @@ def main():
                     os.execvp('claude', ['claude', '--resume', session_id])
 
     except KeyboardInterrupt:
+        print('\033[?7h', end='')  # Re-enable line wrapping
         clear_screen()
         print("Goodbye!")
 
