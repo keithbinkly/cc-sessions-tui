@@ -22,22 +22,21 @@ A terminal UI for browsing and resuming [Claude Code](https://docs.anthropic.com
 ### pipx (recommended)
 
 ```bash
-pipx install cc-![Uploading ccsessions-playbackfast.gif…]()
-sessions-tui
+pipx install git+https://github.com/keithbinkly/cc-sessions-tui.git
 ```
 
 ### pip
 
 ```bash
-pip install cc-sessions-tui
+pip install git+https://github.com/keithbinkly/cc-sessions-tui.git
 ```
 
-### Direct download
+### From source
 
 ```bash
-curl -O https://raw.githubusercontent.com/keithbinkly/cc-sessions-tui/main/cc_sessions_tui.py
-chmod +x cc_sessions_tui.py
-./cc_sessions_tui.py
+git clone https://github.com/keithbinkly/cc-sessions-tui.git
+cd cc-sessions-tui
+pip install .
 ```
 
 ## Usage

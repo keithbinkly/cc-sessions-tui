@@ -3,25 +3,18 @@
 cc-sessions-tui - Interactive TUI for browsing and resuming Claude Code sessions
 
 Usage:
-    cc-sessions-tui           # Launch interactive browser
-
-Controls:
-    ↑/↓ or j/k  - Navigate sessions
-    Enter       - Resume selected session
-    q/Esc       - Quit
-    r           - Refresh
-    1-9         - Jump to session by number
+    cc-sessions           # Launch interactive browser
+    cc-sessions --demo    # Fullstack development demo
+    cc-sessions --demo-dbt # dbt analytics engineering demo
 """
 
 import json
 import os
-import re
 import select
 import shutil
 import sys
 import tty
 import termios
-import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -147,38 +140,6 @@ def extract_text_content(content):
                 texts.append(block.get('text', ''))
         return ' '.join(texts)
     return ''
-
-def clean_message(msg):
-    if not msg:
-        return None
-    if msg.startswith('#') and 'Agent' in msg[:50]:
-        return None
-    if msg.startswith('You are the **'):
-        return None
-    if msg.startswith('Resume instructions:'):
-        return None
-    if msg.startswith('[Request interrupted'):
-        return None
-    if msg.startswith('Caveat:'):
-        return None
-    if msg.startswith('This session is being continued'):
-        return None
-
-    clean = msg.strip()
-    clean = re.sub(r'\[Image:[^\]]+\]', '', clean)
-    clean = re.sub(r'eyJ[A-Za-z0-9_-]{20,}', '[token]', clean)
-    clean = re.sub(r'^\s*>\s*', '', clean)
-    clean = re.sub(r'\*\*([^*]+)\*\*', r'\1', clean)
-    clean = re.sub(r'\*([^*]+)\*', r'\1', clean)
-    clean = re.sub(r'`([^`]+)`', r'\1', clean)
-    clean = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', clean)
-    clean = re.sub(r'^[-*]\s+', '', clean)
-    clean = re.sub(r'^#+\s+', '', clean)
-    clean = ' '.join(clean.split())
-
-    if len(clean) < 10:
-        return None
-    return clean
 
 def get_session_info(filepath):
     user_messages = []
@@ -401,15 +362,11 @@ def get_key():
 def clear_screen():
     print('\033[2J\033[H', end='')
 
-def move_cursor(row, col=1):
-    print(f'\033[{row};{col}H', end='')
-
 def render(sessions, selected_idx, message='', sort_by='msgs', page=0, per_page=15):
     clear_screen()
 
     # Layout constants
     WIDTH = 95
-    NAME_WIDTH = 35
 
     # Pagination
     total_pages = (len(sessions) + per_page - 1) // per_page
@@ -429,7 +386,7 @@ def render(sessions, selected_idx, message='', sort_by='msgs', page=0, per_page=
     k = lambda key: f"{Colors.ACCENT}{key}{Colors.RESET}"
     sort_indicators = {'time': 't', 'msgs': 'm', 'label': 'g'}
     si = sort_indicators.get(sort_by, 't')
-    print(f"  {Colors.MUTED}nav{Colors.RESET} {k('↑↓←→')}  {Colors.MUTED}search{Colors.RESET} {k('/')}  {Colors.MUTED}go{Colors.RESET} {k('⏎')}  {Colors.MUTED}rename{Colors.RESET} {k('r')}  {Colors.MUTED}label{Colors.RESET} {k('l')}  {Colors.MUTED}sort{Colors.RESET} {k('t')}{k('m')}{k('g')}{Colors.STALE}:{si}{Colors.RESET}  {Colors.MUTED}all{Colors.RESET} {k('a')}  {Colors.MUTED}quit{Colors.RESET} {k('q')}")
+    print(f"  {Colors.MUTED}nav{Colors.RESET} {k('↑↓←→')}  {Colors.MUTED}search{Colors.RESET} {k('/')}  {Colors.MUTED}go{Colors.RESET} {k('⏎')}  {Colors.MUTED}new{Colors.RESET} {k('n')}  {Colors.MUTED}rename{Colors.RESET} {k('r')}  {Colors.MUTED}label{Colors.RESET} {k('l')}  {Colors.MUTED}sort{Colors.RESET} {k('t')}{k('m')}{k('g')}{Colors.STALE}:{si}{Colors.RESET}  {Colors.MUTED}all{Colors.RESET} {k('a')}  {Colors.MUTED}quit{Colors.RESET} {k('q')}")
 
     # Column headers - aligned to data columns
     REPO_WIDTH = 14
@@ -556,7 +513,6 @@ def read_input_char(fd):
     ch = sys.stdin.read(1)
     if ch == '\x1b':
         # Could be escape or arrow key - read ahead with timeout
-        import select
         if select.select([fd], [], [], 0.1)[0]:
             ch2 = sys.stdin.read(1)
             if ch2 == '[':
@@ -1036,6 +992,22 @@ def main():
                     print(f"  {Colors.DIM}cd {repo_path} && claude --resume {session_id}{Colors.RESET}\n")
                     os.chdir(repo_path)
                     os.execvp('claude', ['claude', '--resume', session_id])
+            elif key == 'n':  # New session in selected repo
+                s = sessions[selected]
+                repo_path = get_repo_path(s['repo'])
+
+                print('\033[?7h', end='')  # Re-enable line wrapping
+                clear_screen()
+                if HAS_SPECSTORY:
+                    print(f"\n  Starting fresh session in {s['repo']} (via specstory)...\n")
+                    print(f"  {Colors.DIM}cd {repo_path} && specstory run --no-cloud-sync{Colors.RESET}\n")
+                    os.chdir(repo_path)
+                    os.execvp('specstory', ['specstory', 'run', '--no-cloud-sync'])
+                else:
+                    print(f"\n  Starting fresh session in {s['repo']}...\n")
+                    print(f"  {Colors.DIM}cd {repo_path} && claude{Colors.RESET}\n")
+                    os.chdir(repo_path)
+                    os.execvp('claude', ['claude'])
 
     except KeyboardInterrupt:
         print('\033[?7h', end='')  # Re-enable line wrapping
