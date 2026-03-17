@@ -258,6 +258,34 @@ def get_repo_path(repo_name):
     }
     return paths.get(repo_name, '/Users/kbinkly/git-repos')
 
+def get_project_path_from_dir(project_dir_name):
+    """Reconstruct the original filesystem path from a Claude projects directory name.
+
+    e.g. '-Users-kbinkly-git-repos-cc-sessions-tui' -> '/Users/kbinkly/git-repos/cc-sessions-tui'
+
+    The challenge: Claude encodes paths by replacing '/' with '-', but directory
+    names themselves can contain hyphens. We greedily match the longest existing
+    directory at each level.
+    """
+    parts = project_dir_name.lstrip('-').split('-')
+    rebuilt = '/'
+    i = 0
+    while i < len(parts):
+        # Try longest possible segment first (greedy match for hyphenated names)
+        found = False
+        for j in range(len(parts), i, -1):
+            candidate = os.path.join(rebuilt, '-'.join(parts[i:j]))
+            if os.path.isdir(candidate):
+                rebuilt = candidate
+                i = j
+                found = True
+                break
+        if not found:
+            # No existing directory found — append remaining as single component
+            rebuilt = os.path.join(rebuilt, '-'.join(parts[i:]))
+            break
+    return rebuilt
+
 def generate_summary(session_info, max_width=80):
     """Generate Format D summary: intent line + edited files line"""
 
@@ -326,6 +354,7 @@ def collect_sessions(hours=None):
             info = get_session_info(jsonl)
             if info['message_count'] > 0:
                 info['repo'] = get_repo_name(str(jsonl))
+                info['project_dir'] = project_dir.name
                 info['mtime'] = mtime
                 info['size'] = jsonl.stat().st_size
                 info['session_id'] = jsonl.stem
@@ -977,7 +1006,12 @@ def main():
                     message = 'Tag edit cancelled'
             elif key == '\r':  # Enter
                 s = sessions[selected]
-                repo_path = get_repo_path(s['repo'])
+                if s.get('project_dir'):
+                    repo_path = get_project_path_from_dir(s['project_dir'])
+                    if not os.path.isdir(repo_path):
+                        repo_path = get_repo_path(s['repo'])
+                else:
+                    repo_path = get_repo_path(s['repo'])
                 session_id = s['session_id']
 
                 print('\033[?7h', end='')  # Re-enable line wrapping
@@ -994,7 +1028,12 @@ def main():
                     os.execvp('claude', ['claude', '--resume', session_id])
             elif key == 'n':  # New session in selected repo
                 s = sessions[selected]
-                repo_path = get_repo_path(s['repo'])
+                if s.get('project_dir'):
+                    repo_path = get_project_path_from_dir(s['project_dir'])
+                    if not os.path.isdir(repo_path):
+                        repo_path = get_repo_path(s['repo'])
+                else:
+                    repo_path = get_repo_path(s['repo'])
 
                 print('\033[?7h', end='')  # Re-enable line wrapping
                 clear_screen()
